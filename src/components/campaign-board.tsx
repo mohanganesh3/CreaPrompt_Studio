@@ -1,6 +1,7 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Asset, AssetType } from "@/lib/types";
@@ -22,7 +23,8 @@ const iconMap: Record<AssetType, React.ReactNode> = {
   "Moderation": <ShieldCheck className="w-4 h-4" />,
 };
 
-export function CampaignBoard({ assets, removeAsset }: CampaignBoardProps) {
+export const CampaignBoard = React.forwardRef<HTMLDivElement, CampaignBoardProps>(
+  ({ assets, removeAsset }, ref) => {
   const { toast } = useToast();
 
   const handleCopy = (text: string) => {
@@ -41,7 +43,7 @@ export function CampaignBoard({ assets, removeAsset }: CampaignBoardProps) {
 
   return (
     <ScrollArea className="h-full flex-grow">
-      <div className="grid gap-4 grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 pr-4">
+      <div ref={ref} className="grid gap-4 grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 pr-4">
         {assets.map((asset) => (
           <Card key={asset.id} className="flex flex-col">
             <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
@@ -86,4 +88,6 @@ export function CampaignBoard({ assets, removeAsset }: CampaignBoardProps) {
       </div>
     </ScrollArea>
   );
-}
+});
+
+CampaignBoard.displayName = "CampaignBoard";

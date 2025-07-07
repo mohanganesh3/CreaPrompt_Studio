@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Wand2,
   Files,
@@ -31,11 +31,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Separator } from "@/components/ui/separator";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function CreaPromptStudio() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const { toast } = useToast();
+  const boardRef = useRef<HTMLDivElement>(null);
 
   const addAsset = (asset: Omit<Asset, "id" | "createdAt">) => {
     const newAsset = { ...asset, id: crypto.randomUUID(), createdAt: new Date() };
@@ -64,15 +66,77 @@ export default function CreaPromptStudio() {
   };
 
   const handleExport = () => {
+    if (!boardRef.current || assets.length === 0) {
+      toast({
+        title: "Board is Empty",
+        description: "Add some assets to the board before exporting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
-      title: "Export Coming Soon!",
-      description: "PDF and PowerPoint export functionality is under development.",
+      title: "Exporting...",
+      description: "Generating PDF of your campaign board.",
+    });
+
+    const boardElement = boardRef.current;
+    if (!boardElement) return;
+
+
+    html2canvas(boardElement, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: null,
+    }).then((canvas) => {
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      
+      const imgHeight = (canvasHeight * pdfWidth) / canvasWidth;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position -= pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      pdf.save("CreaPrompt-Campaign-Board.pdf");
+
+      toast({
+        title: "Export Successful!",
+        description: "Your PDF has been downloaded.",
+      });
+
+    }).catch(error => {
+      console.error("PDF Export Error:", error);
+      toast({
+        title: "Export Failed",
+        description: "An error occurred while generating the PDF.",
+        variant: "destructive",
+      });
     });
   };
 
   return (
-    <div className="md:grid md:grid-cols-2 lg:grid-cols-5 md:h-screen">
-      <aside className="md:col-span-1 lg:col-span-2 flex flex-col p-4 sm:p-6 border-r bg-card/20">
+    <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-5 md:h-screen md:overflow-hidden">
+      <aside className="md:col-span-1 lg:col-span-2 flex flex-col p-4 sm:p-6 border-r bg-card/20 md:overflow-y-auto">
         <header className="flex items-center gap-3 pb-6">
           <Wand2 className="w-8 h-8 text-primary" />
           <div>
@@ -113,7 +177,7 @@ export default function CreaPromptStudio() {
             <h2 className="text-2xl font-headline">Campaign Board</h2>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleExport}>
+            <Button variant="outline" size="sm" onClick={handleExport} disabled={assets.length === 0}>
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
@@ -141,7 +205,7 @@ export default function CreaPromptStudio() {
           </div>
         </header>
 
-        <CampaignBoard assets={assets} removeAsset={removeAsset} />
+        <CampaignBoard ref={boardRef} assets={assets} removeAsset={removeAsset} />
       </main>
     </div>
   );
