@@ -71,8 +71,8 @@ export default function CreaPromptStudio() {
   };
 
   return (
-    <div className="grid md:grid-cols-2 lg:grid-cols-5 h-screen max-h-screen overflow-hidden">
-      <aside className="md:col-span-1 lg:col-span-2 flex flex-col h-screen p-4 sm:p-6 border-r bg-card/20">
+    <div className="md:grid md:grid-cols-2 lg:grid-cols-5 md:h-screen">
+      <aside className="md:col-span-1 lg:col-span-2 flex flex-col p-4 sm:p-6 border-r bg-card/20">
         <header className="flex items-center gap-3 pb-6">
           <Wand2 className="w-8 h-8 text-primary" />
           <div>
@@ -106,7 +106,7 @@ export default function CreaPromptStudio() {
         </Tabs>
       </aside>
 
-      <main className="md:col-span-1 lg:col-span-3 flex flex-col h-screen p-4 sm:p-6">
+      <main className="md:col-span-1 lg:col-span-3 flex flex-col p-4 sm:p-6">
         <header className="flex items-center justify-between pb-6">
           <div className="flex items-center gap-3">
             <Files className="w-6 h-6 text-primary" />
