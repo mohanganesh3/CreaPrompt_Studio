@@ -45,7 +45,7 @@ export const CampaignBoard = React.forwardRef<HTMLDivElement, CampaignBoardProps
     <ScrollArea className="h-full flex-grow">
       <div ref={ref} className="grid gap-4 grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 pr-4">
         {assets.map((asset) => (
-          <Card key={asset.id} className="flex flex-col">
+          <Card key={asset.id} className="flex flex-col campaign-asset-card">
             <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-base font-medium flex items-center gap-2">
                   {iconMap[asset.type]}

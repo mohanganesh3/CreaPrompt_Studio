@@ -65,8 +65,9 @@ export default function CreaPromptStudio() {
     });
   };
 
-  const handleExport = () => {
-    if (!boardRef.current || assets.length === 0) {
+  const handleExport = async () => {
+    const boardElement = boardRef.current;
+    if (!boardElement || assets.length === 0) {
       toast({
         title: "Board is Empty",
         description: "Add some assets to the board before exporting.",
@@ -77,66 +78,83 @@ export default function CreaPromptStudio() {
 
     toast({
       title: "Exporting...",
-      description: "Generating PDF of your campaign board.",
+      description: "Generating PDF of your campaign board. This may take a moment.",
+    });
+    
+    const clone = boardElement.cloneNode(true) as HTMLElement;
+
+    clone.style.position = 'absolute';
+    clone.style.left = '-9999px';
+    clone.style.top = '0';
+    clone.style.width = '800px'; 
+    clone.style.display = 'flex';
+    clone.style.flexDirection = 'column';
+    clone.style.gap = '16px';
+    clone.style.padding = '0';
+    
+    Array.from(clone.children).forEach(child => {
+        if (child instanceof HTMLElement) {
+            child.style.width = '100%';
+        }
     });
 
-    const boardElement = boardRef.current;
-    if (!boardElement) return;
+    document.body.appendChild(clone);
 
-
-    html2canvas(boardElement, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: null,
-    }).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
+    try {
       const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
-      
-      const imgHeight = (canvasHeight * pdfWidth) / canvasWidth;
-      
-      let heightLeft = imgHeight;
-      let position = 0;
+      const margin = 10;
+      let y = margin;
 
-      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
-      heightLeft -= pdfHeight;
+      const cardElements = clone.querySelectorAll('.campaign-asset-card') as NodeListOf<HTMLElement>;
+      
+      for (const card of Array.from(cardElements)) {
+        const canvas = await html2canvas(card, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: window.getComputedStyle(document.body).getPropertyValue('background-color'),
+        });
 
-      while (heightLeft > 0) {
-        position -= pdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
-        heightLeft -= pdfHeight;
+        const imgData = canvas.toDataURL('image/png');
+        const imgWidth = pdfWidth - margin * 2;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        if (y + imgHeight > pdfHeight - margin && y > margin) {
+          pdf.addPage();
+          y = margin;
+        }
+
+        pdf.addImage(imgData, 'PNG', margin, y, imgWidth, imgHeight);
+        y += imgHeight + 5;
       }
 
-      pdf.save("CreaPrompt-Campaign-Board.pdf");
+      pdf.save('CreaPrompt-Campaign-Board.pdf');
 
       toast({
-        title: "Export Successful!",
-        description: "Your PDF has been downloaded.",
+        title: 'Export Successful!',
+        description: 'Your PDF has been downloaded.',
       });
-
-    }).catch(error => {
-      console.error("PDF Export Error:", error);
+    } catch (error) {
+      console.error('PDF Export Error:', error);
       toast({
-        title: "Export Failed",
-        description: "An error occurred while generating the PDF.",
-        variant: "destructive",
+        title: 'Export Failed',
+        description: 'An error occurred while generating the PDF.',
+        variant: 'destructive',
       });
-    });
+    } finally {
+      document.body.removeChild(clone);
+    }
   };
 
   return (
-    <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-5 md:h-screen md:overflow-hidden">
-      <aside className="md:col-span-1 lg:col-span-2 flex flex-col p-4 sm:p-6 border-r bg-card/20 md:overflow-y-auto">
+    <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-5 h-screen overflow-hidden">
+      <aside className="lg:col-span-2 flex flex-col p-4 sm:p-6 border-r bg-card/20 overflow-y-auto">
         <header className="flex items-center gap-3 pb-6">
           <Wand2 className="w-8 h-8 text-primary" />
           <div>
@@ -170,7 +188,7 @@ export default function CreaPromptStudio() {
         </Tabs>
       </aside>
 
-      <main className="md:col-span-1 lg:col-span-3 flex flex-col p-4 sm:p-6">
+      <main className="lg:col-span-3 flex flex-col p-4 sm:p-6 overflow-hidden">
         <header className="flex items-center justify-between pb-6">
           <div className="flex items-center gap-3">
             <Files className="w-6 h-6 text-primary" />
